@@ -1,6 +1,6 @@
 # Dead Simple Playwright Scraper
 
-For working with LLMs like ChatGPT, you may not need the full structure of the page; you probably just need the text content on the page.
+For working with LLMs like ChatGPT, you may not need the full structure of the page; you probably just need the text content on the page. For example, if you’re running a summarization of a blog post or article.
 
 The easiest way to extract this in your browser is to open up your devtools and type the following in the JavaScript console:
 
@@ -154,7 +154,9 @@ CMD ["node", "dist/index.js"]
 
 ### Google Cloud Run
 
-To start with, enable the Google Cloud Run API in your Google Cloud account.  For most normal use cases, this will be free since you'd have to run millions of requests before consuming the free tier quota.
+To start with, enable the Google Cloud Run API in your Google Cloud account. For most normal use cases, this will be free since you’d have to run ***a lot of*** requests before consuming the free tier quota.
+
+![Billing](/images/google-calc.png)
 
 Use either the `build-deploy-gcr.sh` to build and deploy via artifact registry or use `build-deploy-gcr-src.sh` to build and deploy as source.
 
