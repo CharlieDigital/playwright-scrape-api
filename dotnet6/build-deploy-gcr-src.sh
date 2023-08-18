@@ -1,6 +1,6 @@
 gcloud_svc=pw-scrape-api-dotnet6
 
-# Deploy image
+# Deploy source into a Cloud Build pipeline
 gcloud run deploy $gcloud_svc \
   --source=. \
   --allow-unauthenticated \
