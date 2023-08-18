@@ -1,3 +1,3 @@
 {
-  "dotnet.defaultSolution": "dotnet6/dotnet6.sln"
+  "dotnet.defaultSolution": "dotnet6/playwright-scrape.sln"
 }
