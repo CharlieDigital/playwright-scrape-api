@@ -1,39 +1,132 @@
 # Dead Simple Playwright Scraper
 
-This project is a dead simple Playwright-based scraper for use cases where you're only after the text on the page.
+For working with LLMs like ChatGPT, you may not need the full structure of the page; you probably just need the text content on the page.
 
-This is particularly useful if you are feeding the contents of the text into an LLM like ChatGPT because it removes the HTML tags and you're left with just the text.  ChatGPT is capable enough to consume the text without the HTML.
+The easiest way to extract this in your browser is to open up your devtools and type the following in the JavaScript console:
+
+```js
+document.body.innerText
+```
+
+![Example](/images/document-body-cap.gif)
+
+This will return all of the text nodes in the HTML document.
+
+> 💡 Note: if the page is "noisy", you can just select the containing node for the main content and grab the `innerText` of the containing node.
+
+To do this as an API, we can either process the document as HTML/XML and manually parse out the text nodes or use a headless browser like Playwright.
+
+The advantage of Playwright is that it will also work with single-page-applications (SPAs) which only load the DOM after the page scripts are executed.
+
+This makes it handy for more general purpose scraping of text content from both server-side generated pages as well as SPAs.
+
+The goal of this walkthrough is to build a performant, easy to use REST API that we can perhaps call from OpenAI Function Calling.
+
+## Using Playwright
+
+[Microsoft's Playwright](https://playwright.dev/) is a headless browser automation tool that provides both testing and automation SDKs.
+
+Here, we'll be using the automation SDK to interact with a target URL.  The beauty of it is that it's _dead-simple_:
+
+```csharp
+app.MapGet("/", async (
+  [FromQuery] string url
+) => {
+  url = HttpUtility.UrlDecode(url);
+  using var playwright = await Playwright.CreateAsync();
+  await using var browser = await playwright.Chromium.LaunchAsync(new() {
+    Headless = true
+  });
+
+  await using var context = await browser.NewContextAsync();
+  var page = await context.NewPageAsync();
+  await page.GotoAsync(url);
+  await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
+  var text = await page.EvaluateAsync<string>("document.body.innerText");
+
+  return text;
+});
+```
+
+And in TypeScript:
+
+```js
+app.get("/", cors(corsOpts), async (req: Request, res: Response) => {
+  const url = decodeURIComponent(req.query.url as string)
+
+  const browser = await chromium.launch({
+    headless: true
+  });
+
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.goto(url);
+  await page.waitForLoadState("domcontentloaded");
+  var text = await page.evaluate("document.body.innerText");
+
+  res.status(200).send(text);
+})
+```
 
 ## How Do I Use It?
 
-This approach uses Playwright to load the page and evaluate the JavaScript `document.body.innerText` which simply returns all of the text in the document.
+To run the .NET example:
 
-There are other ways to do it like processing the HTML nodes, but this is problematic because it requires more complex code and doesn't work well with single-page-apps (SPAs) whereas in this case, we can grab content from either server-side-rendered (SSR) or SPAs.
-
-Example:
-
-```
+```shell
 cd dotnet6
 dotnet run
 
 curl http://localhost:5005\?url\=https://chrlschn.dev
 ```
 
+And the TypeScript example:
+
+```shell
+cd typescript
+tsc
+node dist/index.js
+
+curl http://localhost:8080\?url\=https://chrlschn.dev
+```
+
 ## Deploying
 
 Ready to deploy this to use on your own?  This codebase is ready to go!  You can deploy easily into either AWS using Copilot or into Google Cloud using Cloud Run (basically free).
 
+Both the .NET and TypeScript versions build on top of the Microsoft Playwright container image.
+
+- .NET: https://hub.docker.com/_/microsoft-playwright-dotnet
+- Node: https://hub.docker.com/_/microsoft-playwright
+
+This base image is quite hefty and includes the installations of all three browsers (Chrome, Firefox, and WebKit).  You can also consider using a third party image or build your own to trim down the size of the image.
+
 ### Google Cloud Run
 
-Use either the `build-deploy-gcr.sh` to build and deploy via artifact registry or use `build-deploy-gcr-src.sh to build and deploy as source.
+To start with, enable the Google Cloud Run API in your Google Cloud account.  For most normal use cases, this will be free since you'd have to run millions of requests before consuming the free tier quota.
+
+Use either the `build-deploy-gcr.sh` to build and deploy via artifact registry or use `build-deploy-gcr-src.sh` to build and deploy as source.
 
 The former is faster to cycle with since you push smaller layers on changes.  The later is perhaps more convenient.
+
+```shell
+# Deploy source into a Cloud Build pipeline
+gcloud run deploy $gcloud_svc \
+  --source=. \
+  --allow-unauthenticated \
+  --port=8080 \
+  --min-instances=0 \
+  --max-instances=1 \
+  --cpu-boost \
+  --memory=1Gi
+```
+
+Tweak these parameters for your needs, but note that this configuration will scale to zero meaning that you'll incur no cost except when the application is handling a request.  But keep in mind that the free tier quota is quite generous.  You'd need to consume quite a bit before incurring costs.
 
 ### AWS via Copilot
 
 The deployment to AWS is via [Copilot](https://aws.github.io/copilot-cli/) which will deploy the application as a ECS Fargate container.  This has a bit more hoops as it requires a lot more infrastructure on the AWS side.
 
-Onetime setup of the AWS infrastructure via Copilot:
+You'll need to start with a one time setup of the AWS infrastructure via Copilot:
 
 ```shell
 # Initialize the application
