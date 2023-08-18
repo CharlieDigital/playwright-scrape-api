@@ -100,6 +100,58 @@ Both the .NET and TypeScript versions build on top of the Microsoft Playwright c
 
 This base image is quite hefty and includes the installations of all three browsers (Chrome, Firefox, and WebKit).  You can also consider using a third party image or build your own to trim down the size of the image.
 
+Our `Dockerfile` for .NET:
+
+```dockerfile
+# (1) The build environment
+FROM mcr.microsoft.com/dotnet/sdk:6.0-jammy as build
+WORKDIR /app
+
+# (2) Copy the .csproj and restore; this will cache these layers so they are not run if no changes.
+COPY ./playwright-scrape.csproj ./playwright-scrape.csproj
+RUN dotnet restore
+
+# (3) Copy the application files and build.
+COPY ./Program.cs ./Program.cs
+RUN dotnet publish ./playwright-scrape.csproj -o /app/published-app --configuration Release
+
+# (4) The dotnet tagged Playwright environment includes .NET
+FROM mcr.microsoft.com/playwright/dotnet:v1.37.0-jammy as playwright
+WORKDIR /app
+COPY --from=build /app/published-app /app
+
+ENV IS_CONTAINER=true
+
+# (5) Start our app!
+ENTRYPOINT [ "dotnet", "/app/playwright-scrape.dll" ]
+```
+
+And for Node:
+
+```dockerfile
+FROM mcr.microsoft.com/playwright:v1.34.0-jammy
+
+# Create app directory in the image
+WORKDIR /usr/src/app
+
+# Copy over assets
+COPY package.json ./
+COPY yarn.lock ./
+
+# Install dependencies.
+RUN yarn install --immutable --immutable-cache --check-cache
+
+# Copy source
+COPY . .
+
+# Build the TypeScript
+RUN npx tsc
+
+# Start the server.
+EXPOSE 8080
+CMD ["node", "dist/index.js"]
+```
+
 ### Google Cloud Run
 
 To start with, enable the Google Cloud Run API in your Google Cloud account.  For most normal use cases, this will be free since you'd have to run millions of requests before consuming the free tier quota.
