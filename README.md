@@ -4,7 +4,7 @@ This project is a dead simple Playwright-based scraper for use cases where you'r
 
 This is particularly useful if you are feeding the contents of the text into an LLM like ChatGPT because it removes the HTML tags and you're left with just the text.  ChatGPT is capable enough to consume the text without the HTML.
 
-## How Does It Work?
+## How Do I Use It?
 
 This approach uses Playwright to load the page and evaluate the JavaScript `document.body.innerText` which simply returns all of the text in the document.
 
@@ -51,3 +51,7 @@ AWS_PROFILE=profile_name copilot deploy --env prod
 ```
 
 Once you've got it all set up, then use `build-deploy-aws.sh` to deploy into it.
+
+## IMPORTANT NOTES
+
+This API endpoint isn't secured.  At a minimum -- depending on how you want to use it -- add a hard coded API key and pass it in via a header.
