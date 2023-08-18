@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Playwright;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddCorsConfig();
+
 var app = builder.Build();
 
 if (Environment.GetEnvironmentVariable("IS_CONTAINER") == "true") {
@@ -26,5 +29,7 @@ app.MapGet("/", async (
 
   return text;
 });
+
+app.UseCors("cors-policy");
 
 app.Run();
