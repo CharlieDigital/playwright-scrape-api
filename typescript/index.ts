@@ -1,4 +1,3 @@
-import { selectors } from './../dotnet6/bin/Debug/net6.0/.playwright/package/types/types.d';
 import express, { Express, Request, Response } from "express";
 import cors, { CorsOptions } from "cors";
 import { chromium } from "playwright";
