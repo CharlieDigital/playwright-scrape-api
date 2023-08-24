@@ -1,3 +1,4 @@
+import { selectors } from './../dotnet6/bin/Debug/net6.0/.playwright/package/types/types.d';
 import express, { Express, Request, Response } from "express";
 import cors, { CorsOptions } from "cors";
 import { chromium } from "playwright";
@@ -9,8 +10,14 @@ const corsOpts: CorsOptions = {
   methods: [ "GET" ]
 }
 
-app.get("/", cors(corsOpts), async (req: Request, res: Response) => {
+app.get("/",
+  cors(corsOpts),
+  async (req: Request, res: Response) => {
+
   const url = decodeURIComponent(req.query.url as string)
+  const selector = req.query.selector
+    ? decodeURIComponent(req.query.selector as string)
+    : undefined
 
   const browser = await chromium.launch({
     headless: true
@@ -20,7 +27,10 @@ app.get("/", cors(corsOpts), async (req: Request, res: Response) => {
   const page = await context.newPage();
   await page.goto(url);
   await page.waitForLoadState("domcontentloaded");
-  var text = await page.evaluate("document.body.innerText");
+
+  var text = selector
+    ? await page.evaluate(`document.querySelector('${selector}')`)
+    : await page.evaluate("document.body.innerText");
 
   res.status(200).send(text);
 })

@@ -13,9 +13,12 @@ if (Environment.GetEnvironmentVariable("IS_CONTAINER") == "true") {
 }
 
 app.MapGet("/", async (
-  [FromQuery] string url
+  [FromQuery] string url,
+  [FromQuery] string? selector
 ) => {
   url = HttpUtility.UrlDecode(url);
+  selector = HttpUtility.UrlDecode(selector);
+
   using var playwright = await Playwright.CreateAsync();
   await using var browser = await playwright.Chromium.LaunchAsync(new() {
     Headless = true
@@ -25,7 +28,10 @@ app.MapGet("/", async (
   var page = await context.NewPageAsync();
   await page.GotoAsync(url);
   await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
-  var text = await page.EvaluateAsync<string>("document.body.innerText");
+
+  var text = string.IsNullOrEmpty(selector)
+    ? await page.EvaluateAsync<string>("document.body.innerText")
+    : await page.EvaluateAsync<string>($"document.querySelector('{selector}')");
 
   return text;
 });
