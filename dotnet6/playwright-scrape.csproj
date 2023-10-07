@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Playwright" Version="1.37.1" />
+    <PackageReference Include="Microsoft.SemanticKernel" Version="0.24.230912.2-preview" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
   </ItemGroup>
 

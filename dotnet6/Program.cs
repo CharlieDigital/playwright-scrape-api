@@ -3,14 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Playwright;
 
 var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddCorsConfig();
-
+builder.Services.AddCors();
 var app = builder.Build();
-
-if (Environment.GetEnvironmentVariable("IS_CONTAINER") == "true") {
-  app.Urls.Add("http://0.0.0.0:8080");
-}
+var port = 8080;
 
 app.MapGet("/", async (
   [FromQuery] string url,
@@ -36,6 +31,14 @@ app.MapGet("/", async (
   return text;
 });
 
-app.UseCors("cors-policy");
+app.UseCors(cors => cors
+  .AllowAnyHeader()
+  .AllowAnyMethod()
+  .WithOrigins(
+    "http://localhost:3000"
+    // "https://my-app.example.com"
+  )));
+
+app.Urls.Add($"http://0.0.0.0:{port}");
 
 app.Run();
